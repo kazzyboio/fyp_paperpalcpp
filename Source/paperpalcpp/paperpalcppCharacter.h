@@ -55,7 +55,20 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+	
+	//Plane Functions
+	void EnablePlane();
+	void DisablePlane();
+
+	//Sprint Functions
+	void StartSprint();
+	void StopSprint();
+
+	//Stamina Functions
+	void DrainStamina();
+	void RegenStamina();
+	void StaminaChunk();
+
 
 protected:
 	// APawn interface

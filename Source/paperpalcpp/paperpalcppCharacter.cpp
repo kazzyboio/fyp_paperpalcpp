@@ -128,3 +128,31 @@ void ApaperpalcppCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void ApaperpalcppCharacter::EnablePlane()
+{
+}
+
+void ApaperpalcppCharacter::DisablePlane()
+{
+}
+
+void ApaperpalcppCharacter::StartSprint()
+{
+}
+
+void ApaperpalcppCharacter::StopSprint()
+{
+}
+
+void ApaperpalcppCharacter::DrainStamina()
+{
+}
+
+void ApaperpalcppCharacter::RegenStamina()
+{
+}
+
+void ApaperpalcppCharacter::StaminaChunk()
+{
+}
