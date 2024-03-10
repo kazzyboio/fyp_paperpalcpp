@@ -32,13 +32,13 @@ ApaperpalcppCharacter::ApaperpalcppCharacter()
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 700.f;
-	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
+	GetCharacterMovement()->JumpZVelocity = 700.0f;
+	GetCharacterMovement()->AirControl = 1.0f;
+	GetCharacterMovement()->MaxWalkSpeed = 650.f;
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
-
+	
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -58,6 +58,7 @@ void ApaperpalcppCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+	GetCapsuleComponent()->SetSimulatePhysics(GetCapsuleComponent);
 
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
