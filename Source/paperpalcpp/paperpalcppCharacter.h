@@ -44,6 +44,14 @@ class ApaperpalcppCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	/** Glide Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* GlideAction;
+
+	/** Sprint Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SprintAction;
+
 public:
 	ApaperpalcppCharacter();
 	
@@ -57,12 +65,12 @@ protected:
 	void Look(const FInputActionValue& Value);
 	
 	//Plane Functions
-	void EnablePlane();
-	void DisablePlane();
+	void EnablePlane(const FInputActionValue& Value);
+	void DisablePlane(const FInputActionValue& Value);
 
 	//Sprint Functions
-	void StartSprint();
-	void StopSprint();
+	void StartSprint(const FInputActionValue& Value);
+	void StopSprint(const FInputActionValue& Value);
 
 	//Stamina Functions
 	void DrainStamina();
@@ -82,5 +90,8 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	bool isGliding;
+	bool isSprinting;
 };
 

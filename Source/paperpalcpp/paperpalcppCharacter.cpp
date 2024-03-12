@@ -58,6 +58,8 @@ void ApaperpalcppCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("This is an on screen message!"));
 	GetCapsuleComponent()->SetSimulatePhysics(GetCapsuleComponent);
 
 	//Add Input Mapping Context
@@ -130,19 +132,48 @@ void ApaperpalcppCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void ApaperpalcppCharacter::EnablePlane()
+void ApaperpalcppCharacter::EnablePlane(const FInputActionValue& Value)
 {
+	isSprinting = false;
+
+	// Set gliding boolean to true
+	isGliding = true;
+
+	// Set capsule size
+	GetCapsuleComponent()->SetCapsuleSize(55.f, 55.f);
+
+	// Get character movement component
+	//UCharacterMovementComponent* CharacterMovement = GetCharacterMovement();
+		
+	// Set velocity
+	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
+	GetCharacterMovement()->Velocity = FVector(CurrentVelocity.X, CurrentVelocity.Y, -125.f);
+
+	// Set gravity scale
+	GetCharacterMovement()->GravityScale = 0.f;
+
+	// Set air control
+	GetCharacterMovement()->AirControl = 10.f;
+
+	// Set rotation rate
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 175.f);
 }
 
-void ApaperpalcppCharacter::DisablePlane()
+void ApaperpalcppCharacter::DisablePlane(const FInputActionValue& Value)
 {
+	isGliding = false;
+
 }
 
-void ApaperpalcppCharacter::StartSprint()
+void ApaperpalcppCharacter::StartSprint(const FInputActionValue& Value)
 {
+	if (GetCharacterMovement()->IsMovingOnGround())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Character is on the ground and not falling."));
+	}
 }
 
-void ApaperpalcppCharacter::StopSprint()
+void ApaperpalcppCharacter::StopSprint(const FInputActionValue& Value)
 {
 }
 
