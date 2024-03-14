@@ -32,7 +32,7 @@ ApaperpalcppCharacter::ApaperpalcppCharacter()
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 700.0f;
+	GetCharacterMovement()->JumpZVelocity = 825.0f;
 	GetCharacterMovement()->AirControl = 1.0f;
 	GetCharacterMovement()->MaxWalkSpeed = 650.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.0f;
@@ -52,15 +52,53 @@ ApaperpalcppCharacter::ApaperpalcppCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> characterMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/PlayerCharacter/NewCHara/Skeleton_Player.Skeleton_Player'"));
+
+	if (characterMesh.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(characterMesh.Object);
+	}
+
+
 }
 
 void ApaperpalcppCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+	
+	// Iterate over all attached components to find the "Plane" and "Roll" skeletal meshes
+	TArray<USkeletalMeshComponent*> SkeletalMeshComponents;
+	GetComponents<USkeletalMeshComponent>(SkeletalMeshComponents);
+	for (USkeletalMeshComponent* MeshComponent : SkeletalMeshComponents)
+	{
+		// Check if the component's name matches "Plane" or "Roll"
+		if (MeshComponent->GetName() == "Plane")
+		{
+			PlaneMesh = MeshComponent;
+		}
+		else if (MeshComponent->GetName() == "Roll")
+		{
+			RollMesh = MeshComponent;
+		}
+		else if (MeshComponent->GetName() == "Mesh (CharacterMesh0)")
+		{
+			PlayerMesh = MeshComponent;
+		}
+	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("This is an on screen message!"));
-	GetCapsuleComponent()->SetSimulatePhysics(GetCapsuleComponent);
+	// Hide the found meshes
+	if (PlaneMesh)
+	{
+		PlaneMesh->SetVisibility(false);
+	}
+	if (RollMesh)
+	{
+		RollMesh->SetVisibility(false);
+	}
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Using C++ character"));
+	//GetCapsuleComponent()->SetSimulatePhysics(GetCapsuleComponent);
 
 	//Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
@@ -83,6 +121,14 @@ void ApaperpalcppCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
+
+		// Gliding
+		EnhancedInputComponent->BindAction(GlideAction, ETriggerEvent::Started, this, &ApaperpalcppCharacter::EnablePlane);
+		EnhancedInputComponent->BindAction(GlideAction, ETriggerEvent::Completed, this, &ApaperpalcppCharacter::DisablePlane);
+
+		// Sprinting
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ApaperpalcppCharacter::StartSprint);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ApaperpalcppCharacter::StopSprint);
 
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ApaperpalcppCharacter::Move);
@@ -134,51 +180,110 @@ void ApaperpalcppCharacter::Look(const FInputActionValue& Value)
 
 void ApaperpalcppCharacter::EnablePlane(const FInputActionValue& Value)
 {
-	isSprinting = false;
+	if (GetCharacterMovement()->IsFalling())
+	{
+		isSprinting = false;
 
-	// Set gliding boolean to true
-	isGliding = true;
+		// Set gliding boolean to true
+		isGliding = true;
 
-	// Set capsule size
-	GetCapsuleComponent()->SetCapsuleSize(55.f, 55.f);
+		if (GetMesh())
+		{
+			GetMesh()->SetVisibility(false);
+		}
 
-	// Get character movement component
-	//UCharacterMovementComponent* CharacterMovement = GetCharacterMovement();
-		
-	// Set velocity
-	FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-	GetCharacterMovement()->Velocity = FVector(CurrentVelocity.X, CurrentVelocity.Y, -125.f);
+		if (PlaneMesh)
+		{
+			PlaneMesh->SetVisibility(true);
+		}
 
-	// Set gravity scale
-	GetCharacterMovement()->GravityScale = 0.f;
+		//PlayerMesh->SetVisibility(false);
 
-	// Set air control
-	GetCharacterMovement()->AirControl = 10.f;
+		// Set capsule size
+		//GetCapsuleComponent()->SetCapsuleSize(55.f, 55.f);
 
-	// Set rotation rate
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 175.f);
+		// Get character movement component
+		//UCharacterMovementComponent* CharacterMovement = GetCharacterMovement();
+
+		// Set velocity
+		//FVector CurrentVelocity = GetCharacterMovement()->Velocity;
+		//GetCharacterMovement()->Velocity = FVector(CurrentVelocity.X, CurrentVelocity.Y, -125.f);
+
+		// Set gravity scale
+		//GetCharacterMovement()->GravityScale = 0.f;
+
+		// Set air control
+		//GetCharacterMovement()->AirControl = 10.f;
+
+		// Set rotation rate
+		//GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 175.f);
+	}
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("EnablePlane function can only be called while the character is falling."));
+
 }
 
 void ApaperpalcppCharacter::DisablePlane(const FInputActionValue& Value)
 {
-	isGliding = false;
+	if (!GetCharacterMovement()->IsFalling())
+	{
+		isGliding = false;
+
+
+		if (GetMesh())
+		{
+			GetMesh()->SetVisibility(true);
+		}
+
+		if (PlaneMesh)
+		{
+			PlaneMesh->SetVisibility(false);
+		}
+
+		//GetCharacterMovement()->AirControl = 1.f;
+	}
 
 }
 
 void ApaperpalcppCharacter::StartSprint(const FInputActionValue& Value)
 {
+
+	
 	if (GetCharacterMovement()->IsMovingOnGround())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Character is on the ground and not falling."));
+		if (RollMesh)
+		{
+			RollMesh->SetVisibility(true);
+		}
+
+		// Hide the player character mesh
+		if (GetMesh())
+		{
+			GetMesh()->SetVisibility(false);
+		}
 	}
 }
 
 void ApaperpalcppCharacter::StopSprint(const FInputActionValue& Value)
 {
+	if (RollMesh)
+	{
+		RollMesh->SetVisibility(false);
+	}
+
+	if (GetMesh())
+	{
+		GetMesh()->SetVisibility(true);
+	}
 }
 
 void ApaperpalcppCharacter::DrainStamina()
 {
+	stamina = maxStamina - 1;
+
+	if (stamina == 0)
+	{
+		StopSprint(FInputActionValue());
+	}
 }
 
 void ApaperpalcppCharacter::RegenStamina()
