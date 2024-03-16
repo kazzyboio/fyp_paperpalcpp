@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Kismet/KismetMathLibrary.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -19,8 +20,8 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 ApaperpalcppCharacter::ApaperpalcppCharacter()
 {
 	// Set size for collision capsule
-	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+	GetCapsuleComponent()->InitCapsuleSize(35.f, 60.f);
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -81,10 +82,6 @@ void ApaperpalcppCharacter::BeginPlay()
 		{
 			RollMesh = MeshComponent;
 		}
-		else if (MeshComponent->GetName() == "Mesh (CharacterMesh0)")
-		{
-			PlayerMesh = MeshComponent;
-		}
 	}
 
 	// Hide the found meshes
@@ -108,6 +105,11 @@ void ApaperpalcppCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+}
+
+void ApaperpalcppCharacter::Tick(float deltaSeconds)
+{
+	delta = deltaSeconds;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -178,13 +180,23 @@ void ApaperpalcppCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void ApaperpalcppCharacter::EnablePlane(const FInputActionValue& Value)
+void ApaperpalcppCharacter::TogglePlane()
 {
-	if (GetCharacterMovement()->IsFalling())
+	if (isGliding == false)
 	{
-		isSprinting = false;
+		EnablePlane();
+	}
+	else
+	{
+		DisablePlane();
+	}
+}
 
-		// Set gliding boolean to true
+void ApaperpalcppCharacter::EnablePlane()
+{
+	if (CanGlide())
+	{
+		currentVelocity = GetCharacterMovement()->Velocity;
 		isGliding = true;
 
 		if (GetMesh())
@@ -197,37 +209,21 @@ void ApaperpalcppCharacter::EnablePlane(const FInputActionValue& Value)
 			PlaneMesh->SetVisibility(true);
 		}
 
-		//PlayerMesh->SetVisibility(false);
+		GetCapsuleComponent()->SetCapsuleSize(55.f, 55.f);
+		GetCharacterMovement()->Velocity = FVector(currentVelocity.X, currentVelocity.Y, -125.f);
+		GetCharacterMovement()->GravityScale = 0;
+		GetCharacterMovement()->AirControl = 10;
+		GetCharacterMovement()->RotationRate = FRotator(0, 0, 175);
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;
 
-		// Set capsule size
-		//GetCapsuleComponent()->SetCapsuleSize(55.f, 55.f);
-
-		// Get character movement component
-		//UCharacterMovementComponent* CharacterMovement = GetCharacterMovement();
-
-		// Set velocity
-		//FVector CurrentVelocity = GetCharacterMovement()->Velocity;
-		//GetCharacterMovement()->Velocity = FVector(CurrentVelocity.X, CurrentVelocity.Y, -125.f);
-
-		// Set gravity scale
-		//GetCharacterMovement()->GravityScale = 0.f;
-
-		// Set air control
-		//GetCharacterMovement()->AirControl = 10.f;
-
-		// Set rotation rate
-		//GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 175.f);
+		
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("EnablePlane function can only be called while the character is falling."));
 
 }
 
-void ApaperpalcppCharacter::DisablePlane(const FInputActionValue& Value)
+void ApaperpalcppCharacter::DisablePlane()
 {
-	if (!GetCharacterMovement()->IsFalling())
-	{
 		isGliding = false;
-
 
 		if (GetMesh())
 		{
@@ -239,12 +235,49 @@ void ApaperpalcppCharacter::DisablePlane(const FInputActionValue& Value)
 			PlaneMesh->SetVisibility(false);
 		}
 
-		//GetCharacterMovement()->AirControl = 1.f;
-	}
+		GetCapsuleComponent()->SetCapsuleSize(35.f, 60.f);
+		GetCharacterMovement()->GravityScale = 1.f;
+		GetCharacterMovement()->AirControl = 1.f;
+		GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 600.f);
 
 }
 
-void ApaperpalcppCharacter::StartSprint(const FInputActionValue& Value)
+bool ApaperpalcppCharacter::CanGlide()
+{
+	FHitResult Hit;
+
+	FVector TraceStart = GetActorLocation();
+	FVector TraceEnd = GetActorLocation() + GetActorUpVector() * -1;
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	TEnumAsByte<ECollisionChannel> TraceProperties = ECC_Visibility;
+
+	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, TraceProperties, QueryParams);
+
+	DrawDebugLine(GetWorld(), TraceStart, TraceEnd, Hit.bBlockingHit ? FColor::Blue : FColor::Red);
+
+	if (Hit.bBlockingHit == false && GetCharacterMovement()->IsFalling() == true)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void ApaperpalcppCharacter::DescentPlayer()
+{
+	if (currentVelocity.Z != descendingRate * -1 && isGliding == true)
+	{
+		currentVelocity.Z = UKismetMathLibrary::FInterpTo(currentVelocity.Z, descendingRate, delta, 3);
+		GetCharacterMovement()->Velocity.Z = descendingRate * -1;
+	}
+}
+
+void ApaperpalcppCharacter::StartSprint()
 {
 
 	
@@ -260,10 +293,14 @@ void ApaperpalcppCharacter::StartSprint(const FInputActionValue& Value)
 		{
 			GetMesh()->SetVisibility(false);
 		}
+
+		GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+		isSprinting = true;
+		Crouch();
 	}
 }
 
-void ApaperpalcppCharacter::StopSprint(const FInputActionValue& Value)
+void ApaperpalcppCharacter::StopSprint()
 {
 	if (RollMesh)
 	{
@@ -274,6 +311,10 @@ void ApaperpalcppCharacter::StopSprint(const FInputActionValue& Value)
 	{
 		GetMesh()->SetVisibility(true);
 	}
+	GetCharacterMovement()->MaxWalkSpeed = 650.f;
+	isSprinting = false;
+	UnCrouch();
+
 }
 
 void ApaperpalcppCharacter::DrainStamina()
@@ -282,7 +323,7 @@ void ApaperpalcppCharacter::DrainStamina()
 
 	if (stamina == 0)
 	{
-		StopSprint(FInputActionValue());
+		StopSprint();
 	}
 }
 
@@ -293,3 +334,4 @@ void ApaperpalcppCharacter::RegenStamina()
 void ApaperpalcppCharacter::StaminaChunk()
 {
 }
+

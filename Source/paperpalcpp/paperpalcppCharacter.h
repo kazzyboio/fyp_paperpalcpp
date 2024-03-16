@@ -52,8 +52,11 @@ class ApaperpalcppCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enhanced Input", meta = (AllowPrivateAccess = "true"))
 	UInputAction* SprintAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
+	float descendingRate = 300;
 
-	bool isGliding;
+	bool isGliding = false;
+	FVector currentVelocity;
 	bool isSprinting;
 
 	int stamina = 150;
@@ -62,11 +65,11 @@ class ApaperpalcppCharacter : public ACharacter
 	float walkSpeed;
 	float sprintSpeed;
 
+	float delta;
 
 public:
 	ApaperpalcppCharacter();
 	
-
 protected:
 
 	/** Called for movement input */
@@ -76,21 +79,20 @@ protected:
 	void Look(const FInputActionValue& Value);
 	
 	//Plane Functions
-	void EnablePlane(const FInputActionValue& Value);
-	void DisablePlane(const FInputActionValue& Value);
+	void TogglePlane();
+	void EnablePlane();
+	void DisablePlane();
+	bool CanGlide();
+	void DescentPlayer();
 
 	//Sprint Functions
-	void StartSprint(const FInputActionValue& Value);
-	void StopSprint(const FInputActionValue& Value);
+	void StartSprint();
+	void StopSprint();
 
 	//Stamina Functions
 	void DrainStamina();
 	void RegenStamina();
 	void StaminaChunk();
-
-	UPROPERTY(Category = Character, VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMeshComponent> PlayerMesh;	
-	//USkeletalMeshComponent* PlayerMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	USkeletalMeshComponent* PlaneMesh;
@@ -105,6 +107,8 @@ protected:
 	// To add mapping context
 	virtual void BeginPlay();
 
+	virtual void Tick(float deltaSeconds) override;
+		
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
