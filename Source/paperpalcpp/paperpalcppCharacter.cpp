@@ -214,9 +214,7 @@ void ApaperpalcppCharacter::EnablePlane()
 		GetCharacterMovement()->GravityScale = 0;
 		GetCharacterMovement()->AirControl = 10;
 		GetCharacterMovement()->RotationRate = FRotator(0, 0, 175);
-		GetCharacterMovement()->bUseControllerDesiredRotation = true;
-
-		
+		GetCharacterMovement()->bUseControllerDesiredRotation = true;		
 	}
 
 }
@@ -239,7 +237,6 @@ void ApaperpalcppCharacter::DisablePlane()
 		GetCharacterMovement()->GravityScale = 1.f;
 		GetCharacterMovement()->AirControl = 1.f;
 		GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 600.f);
-
 }
 
 bool ApaperpalcppCharacter::CanGlide()
@@ -265,15 +262,6 @@ bool ApaperpalcppCharacter::CanGlide()
 	else
 	{
 		return false;
-	}
-}
-
-void ApaperpalcppCharacter::DescentPlayer()
-{
-	if (currentVelocity.Z != descendingRate * -1 && isGliding == true)
-	{
-		currentVelocity.Z = UKismetMathLibrary::FInterpTo(currentVelocity.Z, descendingRate, delta, 3);
-		GetCharacterMovement()->Velocity.Z = descendingRate * -1;
 	}
 }
 

@@ -83,7 +83,6 @@ protected:
 	void EnablePlane();
 	void DisablePlane();
 	bool CanGlide();
-	void DescentPlayer();
 
 	//Sprint Functions
 	void StartSprint();
